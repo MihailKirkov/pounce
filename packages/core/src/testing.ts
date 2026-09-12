@@ -12,9 +12,9 @@
  * from a list page in practice, but check).
  */
 import { readFile, readdir } from "node:fs/promises";
-import { join, extname, basename } from "node:path";
-import type { HttpClient, HttpResponse } from "./http.js";
+import { basename, extname, join } from "node:path";
 import type { AdapterContext, AdapterLogger, AdapterState, SourceAdapter } from "./adapter.js";
+import type { HttpClient, HttpResponse } from "./http.js";
 
 interface FixtureEntry {
   url: string;
@@ -122,7 +122,8 @@ export async function assertAdapterContract<Raw>(
   const ids = new Set<string>();
   for (const c of canon) {
     if (!c.sourceListingId) throw new Error("toCanonical(): sourceListingId missing");
-    if (ids.has(c.sourceListingId)) throw new Error(`duplicate sourceListingId ${c.sourceListingId}`);
+    if (ids.has(c.sourceListingId))
+      throw new Error(`duplicate sourceListingId ${c.sourceListingId}`);
     ids.add(c.sourceListingId);
     if (!/^https?:\/\//.test(c.url)) throw new Error(`toCanonical(): url not absolute: ${c.url}`);
     if (c.lat !== undefined && (c.lng === undefined || Math.abs(c.lat) > 90))

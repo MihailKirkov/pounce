@@ -1,22 +1,26 @@
-import { describe, it, expect } from "vitest";
-import { testing } from "@pounce/core";
-import { fakeAdapter } from "./index.js";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { testing } from "@pounce/core";
+import { describe, expect, it } from "vitest";
+import { fakeAdapter } from "./index.js";
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
 
 describe("fake adapter", () => {
   it("satisfies the adapter contract against fixtures", async () => {
     const ctx = await testing.createTestContext({ fixturesDir });
-    const { canon } = await testing.assertAdapterContract(fakeAdapter, ctx, { cities: ["Eindhoven"] });
+    const { canon } = await testing.assertAdapterContract(fakeAdapter, ctx, {
+      cities: ["Eindhoven"],
+    });
     expect(canon).toHaveLength(3);
     expect(ctx.http.requests).toEqual(["https://fake.example/api/list?city=eindhoven"]);
   });
 
   it("maps all-in vs base+service correctly", async () => {
     const ctx = await testing.createTestContext({ fixturesDir });
-    const { canon } = await testing.assertAdapterContract(fakeAdapter, ctx, { cities: ["Eindhoven"] });
+    const { canon } = await testing.assertAdapterContract(fakeAdapter, ctx, {
+      cities: ["Eindhoven"],
+    });
     const [a, b] = canon;
     expect(a?.priceBaseCents).toBe(105000);
     expect(a?.priceTotalCents).toBe(118500);
@@ -26,7 +30,9 @@ describe("fake adapter", () => {
 
   it("leaves registration unknown until detail() runs", async () => {
     const ctx = await testing.createTestContext({ fixturesDir });
-    const { raws } = await testing.assertAdapterContract(fakeAdapter, ctx, { cities: ["Eindhoven"] });
+    const { raws } = await testing.assertAdapterContract(fakeAdapter, ctx, {
+      cities: ["Eindhoven"],
+    });
     const first = raws[0]!;
     expect(fakeAdapter.toCanonical(first).registrationAllowed).toBeUndefined();
     const enriched = await fakeAdapter.detail!(first, ctx);

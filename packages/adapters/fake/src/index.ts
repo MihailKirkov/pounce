@@ -3,7 +3,7 @@
  * serve as the reference implementation of the contract. It reads JSON from
  * a pretend API; a real adapter parses HTML the same way, just with a parser.
  */
-import { defineAdapter, type CanonicalListingInput, type Furnishing } from "@pounce/core";
+import { type CanonicalListingInput, type Furnishing, defineAdapter } from "@pounce/core";
 
 interface FakeRaw {
   id: string;
@@ -64,7 +64,9 @@ export const fakeAdapter = defineAdapter<FakeRaw>({
   },
 
   async detail(raw, ctx) {
-    const res = await ctx.http.get(`https://fake.example/api/listing/${raw.id.replace("fake-", "")}`);
+    const res = await ctx.http.get(
+      `https://fake.example/api/listing/${raw.id.replace("fake-", "")}`,
+    );
     if (res.status !== 200) return raw;
     const d = await res.json<Partial<FakeRaw>>();
     return { ...raw, ...d };
