@@ -1,0 +1,15 @@
+{
+  "name": "@pounce/db",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo 'no tests yet'",
+    "migrate": "drizzle-kit migrate",
+    "generate": "drizzle-kit generate"
+  },
+  "dependencies": { "drizzle-orm": "^0.36.0", "postgres": "^3.4.4" },
+  "devDependencies": { "drizzle-kit": "^0.28.0", "typescript": "^5.6.3", "@types/node": "^22.7.5" }
+}

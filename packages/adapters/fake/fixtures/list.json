@@ -1,0 +1,5 @@
+[
+  { "id": "fake-1001", "url": "https://fake.example/listing/1001", "title": "Kruisstraat 112", "postcode": "5612 CJ", "city": "Eindhoven", "street": "Kruisstraat", "nr": "112", "lat": 51.4460, "lng": 5.4780, "rent": 1050, "service": 135, "sqm": 58, "rooms": 3, "furnished": "gestoffeerd", "from": "2027-01-01", "published": "2026-09-12T11:58:00Z" },
+  { "id": "fake-1002", "url": "https://fake.example/listing/1002?utm_source=x", "title": "Hoogstraat 208A", "postcode": "5615PT", "city": "Eindhoven", "street": "Hoogstraat", "nr": "208A", "rent": 1275, "allin": true, "sqm": 47, "rooms": 2, "furnished": "gemeubileerd", "from": "2026-12-15", "published": "2026-09-12T11:50:00Z" },
+  { "id": "fake-1003", "url": "https://fake.example/listing/1003", "title": "Blaarthemseweg 74", "postcode": "5502 JV", "city": "Veldhoven", "street": "Blaarthemseweg", "nr": "74", "rent": 870, "service": 125, "sqm": 44, "rooms": 2, "furnished": "kaal", "from": "2027-01-01", "published": "2026-09-12T09:00:00Z" }
+]
