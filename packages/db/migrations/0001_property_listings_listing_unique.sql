@@ -1,0 +1,1 @@
+ALTER TABLE "property_listings" ADD CONSTRAINT "property_listings_listing_unique" UNIQUE("listing_id");

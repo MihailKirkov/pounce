@@ -100,3 +100,15 @@ Format: context → decision → why → what we gave up. Keep each under ~150 w
 **Consequences.** `lat`/`lng` become important instead of optional. Pararius exposes coordinates; if Huurwoningen doesn't, pins for its listings fall back to postcode centroid (a static NL postcode table, PC4 level, is fine for MVP). The work address is stored and used for straight-line distance only; isochrones remain out of scope. Mobile is map-on-top, sheet-below, same components.
 
 **Gave up.** The dark utilitarian look. One more adapter requirement (coordinates or postcode) — acceptable.
+
+---
+
+## 003a — Amendment to 003: idempotency key includes channel (2026-09-13)
+
+**Context.** 003 specified `notifications(search_id, property_id)` with a status column. When the schema was written (sprint 1, T1), `channel` was added to the key and retry state became `sent_at` / `error`.
+
+**Decision.** The unique constraint is `notifications(search_id, property_id, channel)`. Retry state lives in `sent_at` and `error` on the same row; a retry updates that row, never inserts another.
+
+**Why.** Keying on channel lets a second channel be added later without a constraint change. The rule itself is unchanged: one notification per search, per property, per channel, ever. Insert before send; on conflict, skip.
+
+**Gave up.** Nothing. With a single channel (Telegram) the behaviour is identical to 003 as written.

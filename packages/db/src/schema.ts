@@ -120,7 +120,11 @@ export const propertyListings = pgTable(
       .notNull()
       .references(() => listings.id),
   },
-  (t) => [primaryKey({ columns: [t.propertyId, t.listingId] })],
+  (t) => [
+    primaryKey({ columns: [t.propertyId, t.listingId] }),
+    // A listing belongs to exactly one property; two would mean duplicate alerts.
+    unique("property_listings_listing_unique").on(t.listingId),
+  ],
 );
 
 /** Audit trail for dedup so merges can be reviewed and undone. */
