@@ -39,6 +39,8 @@ Format: context → decision → why → what we gave up. Keep each under ~150 w
 
 **Gave up.** Nothing meaningful.
 
+**Amendment (2026-09-13)**: the constraint is (search_id, property_id, channel). Channel was added when the schema was written; the rule is unchanged — one notification per search, per property, per channel, ever. Retry state lives in sent_at / error on the same row.
+
 ---
 
 ## 004 — Store facts and a link, never content (2026-09-12)
