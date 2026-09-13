@@ -79,9 +79,11 @@ describe("createHttpClient", () => {
     expect(pages[0]?.at).toBe(pages[1]?.at);
   });
 
-  it("throws RobotsDisallowedError for a path disallowed for *, without requesting it", async () => {
+  it("falls back to * when no group names us, and throws without requesting the path", async () => {
     const { calls } = stubFetch({
-      "https://a.example": { body: "User-agent: *\nDisallow: /private\n" },
+      "https://a.example": {
+        body: "User-agent: googlebot\nAllow: /\n\nUser-agent: *\nDisallow: /private\n",
+      },
     });
     const client = createHttpClient({ userAgent: UA, minGapMs: 0 });
 
@@ -114,6 +116,32 @@ describe("createHttpClient", () => {
     await expect(client.get("https://a.example/huur/eindhoven?sort=price")).rejects.toBeInstanceOf(
       RobotsDisallowedError,
     );
+    await expect(client.get("https://a.example/huur/eindhoven")).resolves.toMatchObject({
+      status: 200,
+    });
+  });
+
+  it("ignores * when a group names us, even if * disallows the path", async () => {
+    stubFetch({
+      "https://a.example": {
+        body: "User-agent: *\nDisallow: /huur\n\nUser-agent: pounce\nAllow: /huur\n",
+      },
+    });
+    const client = createHttpClient({ userAgent: UA, minGapMs: 0 });
+
+    await expect(client.get("https://a.example/huur/eindhoven")).resolves.toMatchObject({
+      status: 200,
+    });
+  });
+
+  it("treats a group naming us with only an empty Disallow as allow-all, shadowing *", async () => {
+    stubFetch({
+      "https://a.example": {
+        body: "User-agent: pounce\nDisallow:\n\nUser-agent: *\nDisallow: /\n",
+      },
+    });
+    const client = createHttpClient({ userAgent: UA, minGapMs: 0 });
+
     await expect(client.get("https://a.example/huur/eindhoven")).resolves.toMatchObject({
       status: 200,
     });

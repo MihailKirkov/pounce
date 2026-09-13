@@ -79,7 +79,7 @@ export function createHttpClient(opts: HttpClientOptions): HttpClient {
       return false;
     }
     const path = url.pathname + url.search;
-    return rules.every((group) => isAllowedByGroup(group, path));
+    return isAllowedByRules(rules, path);
   }
 
   return {
@@ -120,8 +120,11 @@ interface RobotsRule {
   regex: RegExp;
 }
 
-/** Rules that apply to us: our own group(s) and the `*` group(s), checked independently. */
-type RobotsRules = RobotsRule[][];
+/**
+ * Rules that apply to us (RFC 9309 §2.2.1): the group(s) naming our product
+ * token if any exist, otherwise the `*` group(s).
+ */
+type RobotsRules = RobotsRule[];
 
 const ALLOW_ALL: RobotsRules = [];
 
@@ -133,6 +136,8 @@ function productToken(userAgent: string): string {
 function parseRobots(body: string, agentToken: string): RobotsRules {
   const ours: RobotsRule[] = [];
   const star: RobotsRule[] = [];
+  // A group naming us applies even if it has no rules; it still shadows `*`.
+  let namesUs = false;
   let groupAgents: string[] = [];
   let inRules = false;
 
@@ -148,6 +153,7 @@ function parseRobots(body: string, agentToken: string): RobotsRules {
       if (inRules) groupAgents = [];
       inRules = false;
       groupAgents.push(value.toLowerCase());
+      if (value.toLowerCase() === agentToken) namesUs = true;
     } else if (key === "allow" || key === "disallow") {
       inRules = true;
       // An empty Disallow means "nothing disallowed"; an empty Allow means nothing.
@@ -158,13 +164,13 @@ function parseRobots(body: string, agentToken: string): RobotsRules {
     }
   }
 
-  return [ours, star].filter((group) => group.length > 0);
+  return namesUs ? ours : star;
 }
 
 /** Longest matching pattern wins; on a tie, Allow wins. No match means allowed. */
-function isAllowedByGroup(group: RobotsRule[], path: string): boolean {
+function isAllowedByRules(rules: RobotsRules, path: string): boolean {
   let best: RobotsRule | undefined;
-  for (const rule of group) {
+  for (const rule of rules) {
     if (!rule.regex.test(path)) continue;
     if (
       !best ||
