@@ -13,3 +13,4 @@ export {
 export * from "./dedup/fingerprint.js";
 export * from "./match/matcher.js";
 export * from "./notify/format.js";
+export * from "./geo/distance.js";

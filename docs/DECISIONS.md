@@ -118,3 +118,15 @@ Format: context → decision → why → what we gave up. Keep each under ~150 w
 **Why.** Keying on channel lets a second channel be added later without a constraint change. The rule itself is unchanged: one notification per search, per property, per channel, ever. Insert before send; on conflict, skip.
 
 **Gave up.** Nothing. With a single channel (Telegram) the behaviour is identical to 003 as written.
+
+---
+
+## 010 — AGPL-3.0-only over MIT (2026-09-13)
+
+**Context.** Open source is the trust differentiator against incumbents (brief §3): users can read exactly what the watcher fetches and sends. The realistic threat is not a user self-hosting, it is a competitor hosting the engine as a paid service without contributing back.
+
+**Decision.** License the repository AGPL-3.0-only. Copyright is retained by the owner (no copyright assignment to a foundation, contributions accepted under the same license), so a future hosted version can be dual-licensed.
+
+**Why.** MIT permits exactly the hosted-fork scenario. AGPL's network clause closes it while leaving self-hosting and modification unrestricted, which is the whole audience. "-only" avoids pre-committing to license versions that don't exist yet.
+
+**Gave up.** Contributors at companies with blanket AGPL bans, and some corporate adoption.

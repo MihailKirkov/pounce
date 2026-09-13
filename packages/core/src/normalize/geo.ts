@@ -1,11 +1,9 @@
+import type { LatLng } from "../geo/distance.js";
 import table from "./pc4-centroids.json" with { type: "json" };
 
-export type GeoPrecision = "exact" | "postcode";
+export type { LatLng } from "../geo/distance.js";
 
-export interface LatLng {
-  lat: number;
-  lng: number;
-}
+export type GeoPrecision = "exact" | "postcode";
 
 // TODO: bundle the full NL PC4 table (see docs/backlog.md). This one only
 // covers Eindhoven, Veldhoven and Best, which includes every fake fixture.

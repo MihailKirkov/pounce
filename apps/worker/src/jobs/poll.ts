@@ -1,16 +1,13 @@
 /**
- * poll:<sourceId> — list() → bump last_seen_at for known listings → detail() +
- * insert for new ones → one source_runs row.
- *
- * Canonical fields are inserted as the adapter returned them. Normalize, dedup,
- * match and notify are later sprints.
+ * poll:<sourceId> — list() → bump last_seen_at for known listings → detail() and
+ * ingestNewListing() (normalize, dedup, match, enqueue notify) for new ones →
+ * one source_runs row.
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type AdapterContext,
   type AdapterLogger,
-  type CanonicalListingInput,
   type SearchScope,
   type SourceAdapter,
   createHttpClient,
@@ -23,6 +20,8 @@ import type { Redis } from "ioredis";
 import type { Logger } from "pino";
 import { registry } from "../registry.js";
 import { clearBackoff, createRedisAdapterState, readBackoff, writeBackoff } from "../state.js";
+import { type ActiveSearch, ingestNewListing, loadActiveSearches } from "./ingest.js";
+import type { NotifyJobData } from "./notify.js";
 import { MAX_RETRY_AFTER_MS, nextBackoff, watchForThrottling } from "./throttle.js";
 
 export interface PollJobData {
@@ -39,6 +38,8 @@ export interface PollDeps {
    * the network (fake.example does not exist). Remove in sprint 2.
    */
   fixtureMode: boolean;
+  /** Enqueues notify jobs built with notifyJob(), so jobIds match the sweeper's. */
+  enqueueNotify: (jobs: NotifyJobData[]) => Promise<void>;
 }
 
 // Sprint 1: one hardcoded scope. Later, the union of active saved searches.
@@ -152,8 +153,15 @@ async function pollSource(
 
     if (result) {
       seen = result.listings.length;
+      // Once per poll: a search edited mid-poll applies from the next one.
+      const searches = await loadActiveSearches(db);
       for (const raw of result.listings) {
-        if (await ingest(adapter, ctx, db, log, raw)) created++;
+        // One bad listing is recorded and skipped; it must not cost the others.
+        try {
+          if (await ingest(adapter, ctx, deps, searches, raw)) created++;
+        } catch (err) {
+          errors.push(`listing: ${errorMessage(err)}`);
+        }
       }
     }
   } catch (err) {
@@ -178,14 +186,16 @@ async function pollSource(
   else log.warn(line, "poll");
 }
 
-/** Returns true if the listing was new and inserted. */
+/** Returns true if the listing was new and ingested. */
 async function ingest(
   adapter: SourceAdapter,
   ctx: AdapterContext,
-  db: Db,
-  log: Logger,
+  deps: PollDeps,
+  searches: readonly ActiveSearch[],
   raw: unknown,
 ): Promise<boolean> {
+  const { db } = deps;
+  const log = deps.log.child({ source: adapter.id });
   const listed = adapter.toCanonical(raw);
   const now = ctx.now();
 
@@ -211,53 +221,14 @@ async function ingest(
     }
   }
 
-  const inserted = await db
-    .insert(listings)
-    .values(toListingRow(adapter.id, canon, now))
-    .onConflictDoNothing({ target: [listings.sourceId, listings.sourceListingId] })
-    .returning({ id: listings.id });
-  return inserted.length > 0;
-}
-
-function toListingRow(
-  sourceId: string,
-  c: CanonicalListingInput,
-  now: Date,
-): typeof listings.$inferInsert {
-  return {
-    sourceId,
-    sourceListingId: c.sourceListingId,
-    canonicalUrl: c.url,
-    firstSeenAt: now,
-    lastSeenAt: now,
-    publishedAt: c.publishedAt ?? null,
-    title: c.title ?? null,
-    addressRaw: c.addressRaw ?? null,
-    street: c.street ?? null,
-    houseNumber: c.houseNumber ?? null,
-    postcode: c.postcode ?? null,
-    city: c.city ?? null,
-    lat: c.lat ?? null,
-    lng: c.lng ?? null,
-    priceBaseCents: c.priceBaseCents ?? null,
-    priceTotalCents: c.priceTotalCents ?? null,
-    priceIncludes: c.priceIncludes ?? null,
-    depositCents: c.depositCents ?? null,
-    areaSqm: c.areaSqm ?? null,
-    rooms: c.rooms ?? null,
-    bedrooms: c.bedrooms ?? null,
-    propertyType: c.propertyType ?? null,
-    furnished: c.furnished ?? null,
-    availableFrom: c.availableFrom ?? null,
-    minContractMonths: c.minContractMonths ?? null,
-    registrationAllowed: c.registrationAllowed ?? null,
-    petsAllowed: c.petsAllowed ?? null,
-    incomeRequirementMultiple:
-      c.incomeRequirementMultiple === undefined ? null : String(c.incomeRequirementMultiple),
-    agencyName: c.agencyName ?? null,
-    agencyFeeFlagged: c.agencyFeeFlagged ?? null,
-    rawPayload: c.extra ?? null,
-  };
+  const ingested = await ingestNewListing(
+    { db, log: deps.log, enqueueNotify: deps.enqueueNotify },
+    adapter.id,
+    canon,
+    now,
+    searches,
+  );
+  return ingested !== undefined;
 }
 
 function toAdapterLogger(log: Logger): AdapterLogger {

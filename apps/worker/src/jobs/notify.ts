@@ -8,7 +8,7 @@
  * holds the claimed_at lease; dead_at set means it gave up for good. BullMQ
  * attempt counts play no part.
  */
-import { formatTelegram } from "@pounce/core";
+import { type NormalizedListing, distanceKm, formatTelegram } from "@pounce/core";
 import { type Db, listings, notifications, properties, savedSearches } from "@pounce/db";
 import { type Job, type JobsOptions, UnrecoverableError } from "bullmq";
 import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
@@ -230,10 +230,29 @@ async function buildMessage(
   if (!row) throw new Error(`property ${propertyId} has no representative listing`);
 
   const listing = listingFromRow(row.listing);
+  const distance = workDistanceKm(listing, search);
   const text = formatTelegram(listing, searchFromRow(search), {
     now,
     sourceName: deps.sourceName(listing.sourceId),
     firstSeenAt: row.listing.firstSeenAt,
+    ...(distance === undefined ? {} : { distanceKm: distance }),
   });
   return { chatId: search.telegramChatId, text };
+}
+
+/**
+ * Straight-line km from the listing to the search's work address, or undefined
+ * when either side has no coordinates. A listing's coordinates may be a PC4
+ * centroid (geo_precision = 'postcode'), which is close enough for a display line.
+ */
+function workDistanceKm(
+  listing: NormalizedListing,
+  search: typeof savedSearches.$inferSelect,
+): number | undefined {
+  if (listing.lat === undefined || listing.lng === undefined) return undefined;
+  if (search.workLat === null || search.workLng === null) return undefined;
+  return distanceKm(
+    { lat: listing.lat, lng: listing.lng },
+    { lat: search.workLat, lng: search.workLng },
+  );
 }

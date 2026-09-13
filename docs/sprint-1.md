@@ -80,7 +80,9 @@ Test with a mocked Telegram call: two concurrent jobs for the same (search, prop
 Add packages/db/src/seed.ts (pnpm --filter @pounce/db run seed): upsert one saved search "Eindhoven apartment" with cities ["Eindhoven"], price_total_max_cents 130000, area_sqm_min 40, rooms_min 2, registration 'any', telegram_chat_id from TELEGRAM_CHAT_ID env, active true.
 ```
 
-Then in `poll.ts`, after inserting a new listing, temporarily treat every new listing as its own property (insert one `properties` row, one `property_listings` row) and enqueue `notify` for every active saved search. This is deliberately wrong — no dedup, no matching — and is replaced in sprints 3–5. Phone buzzes three times. Restart the worker: phone does not buzz. That's the acceptance test.
+Then wire `poll.ts` through. The plan here was a throwaway — every new listing its own property, `notify` enqueued for every active saved search, no dedup, no matching. **As built**, T6 wired the real pipeline instead: each new listing is normalized, deduplicated into a property, matched against every active saved search, and a notify job is enqueued for each new match.
+
+Phone buzzes **twice**, not three times. Three assumed every listing alerted every search. With the matcher in place, fake-1003 (Blaarthemseweg 74) is in Veldhoven, outside the seeded search's `cities: ["Eindhoven"]`, so it gets a property but no match and no alert. Kruisstraat 112 and Hoogstraat 208A both match. Restart the worker: phone does not buzz. That's the acceptance test.
 
 ## T7 — API skeleton (delegate)
 

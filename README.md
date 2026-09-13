@@ -21,3 +21,7 @@ packages/core   Adapter contract, canonical model, normalizer, dedup, matcher  â
 packages/db     Drizzle schema, migrations, client
 packages/adapters/*   One package per source. See ADAPTERS.md to add one.
 ```
+
+## License
+
+[AGPL-3.0-only](LICENSE). Self-hosting and modifying Pounce are free for any purpose; if you run a modified version as a network service for others, you must publish your modifications under the same license.

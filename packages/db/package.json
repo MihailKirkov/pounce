@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "echo 'no tests yet'",
     "migrate": "drizzle-kit migrate",
+    "seed": "tsc -p tsconfig.json && node --env-file-if-exists=../../.env dist/seed.js",
     "generate": "drizzle-kit generate"
   },
   "dependencies": { "drizzle-orm": "^0.36.0", "postgres": "^3.4.4" },

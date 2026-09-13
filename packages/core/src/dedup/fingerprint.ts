@@ -85,3 +85,47 @@ export function matchLayer(
   }
   return undefined;
 }
+
+export interface DedupCandidate {
+  listing: NormalizedListing;
+  propertyId: string;
+}
+
+export interface DedupHit {
+  match: DedupMatch;
+  propertyId: string;
+}
+
+/** Lower is stronger: the layer order of docs/data-model.md. */
+const LAYER_RANK: Readonly<Record<FingerprintKind, number>> = { url: 0, address: 1, fuzzy: 2 };
+
+function stronger(a: DedupMatch, b: DedupMatch): boolean {
+  const byLayer = LAYER_RANK[a.kind] - LAYER_RANK[b.kind];
+  return byLayer !== 0 ? byLayer < 0 : a.score > b.score;
+}
+
+/**
+ * The property `candidate` belongs to, or undefined for a new one. Across all
+ * existing listings the strongest layer wins, then the higher score; on a tie
+ * the earlier candidate. Pure; the caller chooses which listings to compare.
+ */
+export function bestMatch(
+  candidate: NormalizedListing,
+  existing: readonly DedupCandidate[],
+): DedupHit | undefined {
+  let best: DedupHit | undefined;
+  for (const { listing, propertyId } of existing) {
+    const match = matchLayer(candidate, listing);
+    if (match && (!best || stronger(match, best.match))) best = { match, propertyId };
+  }
+  return best;
+}
+
+/**
+ * `properties.fingerprint_kind` for a property founded by this listing: the
+ * identity it can be found by from another source. Address when it has one;
+ * otherwise only its URL identifies it — fuzzy is a tolerance, not an identity.
+ */
+export function newPropertyKind(listing: NormalizedListing): FingerprintKind {
+  return fingerprints(listing).address !== undefined ? "address" : "url";
+}

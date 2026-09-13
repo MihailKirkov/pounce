@@ -34,6 +34,20 @@ beforeEach(() => t.assertReachable());
 afterAll(() => t.close());
 
 describe("notify job", () => {
+  it("adds the straight-line distance to work only when both sides have coordinates", async () => {
+    const work = { workLat: 51.4105, workLng: 5.4577 }; // High Tech Campus
+    const withCoords = await t.seed({ search: work, listing: { lat: 51.446, lng: 5.478 } });
+    const noCoords = await t.seed({ search: work });
+    const { run, sendTelegram } = setup();
+
+    await run(job(withCoords));
+    await run(job(noCoords));
+
+    const [first, second] = sendTelegram.mock.calls.map(([, text]) => text.split("\n")[1]);
+    expect(first).toBe("5612 CJ · 4.2 km to work");
+    expect(second).toBe("5612 CJ");
+  });
+
   it("sends the formatted message to the search's chat and sets claimed_at and sent_at", async () => {
     const data = await t.seed();
     const { run, sendTelegram } = setup();

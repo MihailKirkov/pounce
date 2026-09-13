@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type NormalizedListing, normalize } from "../normalize/index.js";
-import { fingerprints, matchLayer } from "./fingerprint.js";
+import { bestMatch, fingerprints, matchLayer, newPropertyKind } from "./fingerprint.js";
 
 function listing(overrides: Partial<NormalizedListing> = {}): NormalizedListing {
   return {
@@ -173,5 +173,48 @@ describe("matchLayer", () => {
         elsewhere({ postcode: "5502JV", priceTotalCents: 87000, areaSqm: 44, rooms: 2 }),
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("bestMatch", () => {
+  it("returns undefined when no existing listing matches", () => {
+    const far = elsewhere({ postcode: "5502JV" });
+    expect(bestMatch(listing(), [{ listing: far, propertyId: "p-far" }])).toBeUndefined();
+    expect(bestMatch(listing(), [])).toBeUndefined();
+  });
+
+  it("prefers a stronger layer over an earlier weaker hit: url over address over fuzzy", () => {
+    const fuzzy = { listing: elsewhere(), propertyId: "p-fuzzy" };
+    const address = {
+      listing: listing({ sourceId: "other", canonicalUrl: "https://other.example/huur/1" }),
+      propertyId: "p-address",
+    };
+    const url = { listing: listing({ sourceListingId: "fake-1-relisted" }), propertyId: "p-url" };
+
+    expect(bestMatch(listing(), [fuzzy, address])).toEqual({
+      match: { kind: "address", score: 1 },
+      propertyId: "p-address",
+    });
+    expect(bestMatch(listing(), [fuzzy, address, url])).toEqual({
+      match: { kind: "url", score: 1 },
+      propertyId: "p-url",
+    });
+  });
+
+  it("among fuzzy hits, takes the highest score", () => {
+    const close = { listing: elsewhere({ priceTotalCents: 99000 }), propertyId: "p-close" };
+    const exact = { listing: elsewhere(), propertyId: "p-exact" };
+    expect(bestMatch(listing(), [close, exact])?.propertyId).toBe("p-exact");
+    expect(bestMatch(listing(), [exact, close])?.propertyId).toBe("p-exact");
+  });
+});
+
+describe("newPropertyKind", () => {
+  it("is address when the listing carries an address fingerprint", () => {
+    expect(newPropertyKind(listing())).toBe("address");
+  });
+
+  it("is url when it doesn't, even if a fuzzy key exists", () => {
+    expect(newPropertyKind(elsewhere())).toBe("url");
   });
 });

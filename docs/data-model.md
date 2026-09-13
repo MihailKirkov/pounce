@@ -90,7 +90,7 @@ notifications(id, search_id, property_id, channel, created_at, claimed_at, sent_
   unique (search_id, property_id, channel)   -- the idempotency rule, in the schema
 ```
 
-`claimed_at` is a send lease. A worker sends only while it holds a lease it took itself: set on insert, or taken from an unsent, live row whose `claimed_at` is null (released after a failed send) or older than 2 minutes. Unsent live rows untouched for 10 minutes are re-enqueued by the sweeper, so a crashed worker or an exhausted retry chain is recovered rather than lost.
+`claimed_at` is a send lease. A worker sends only while it holds a lease it took itself: set on insert, or taken from an unsent, live row whose `claimed_at` is null (released after a failed send) or older than 2 minutes. Unsent live rows untouched for 10 minutes are re-enqueued by the sweeper, so a crashed worker or an exhausted retry chain is recovered rather than lost. The sweeper also re-enqueues `matches` rows older than 10 minutes with no `telegram` notifications row — a match whose notify job was never enqueued.
 
 Each failed send increments `attempts`. The 10th failure sets `dead_at` instead of releasing the lease: the row is terminal — never leased, swept or re-inserted — and the alert for that pair is not sent. A notify job is enqueued with jobId `notify-<search_id>-<property_id>`, so the queue holds at most one pending job per pair.
 

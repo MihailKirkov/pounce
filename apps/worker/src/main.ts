@@ -42,6 +42,15 @@ const notifyQueue = new Queue<NotifyJobData>("notify", {
 });
 const sweepQueue = new Queue("notify-sweep", { connection: redis });
 
+/**
+ * The one way notify jobs are added, by poll and sweeper alike. Queue defaults
+ * give every job the same attempts and backoff; notifyJob()'s deterministic
+ * jobId drops a pair whose job is still pending.
+ */
+async function enqueueNotify(jobs: NotifyJobData[]): Promise<void> {
+  await notifyQueue.addBulk(jobs.map(notifyJob));
+}
+
 await sweepQueue.upsertJobScheduler(
   "notify-sweep",
   { every: SWEEP_EVERY_MS },
@@ -65,7 +74,7 @@ for (const adapter of Object.values(registry)) {
 // Concurrency 1: one poll at a time keeps the per-source request gap meaningful.
 const pollWorker = new Worker<PollJobData>(
   "poll",
-  createPollProcessor({ db, redis, log, userAgent, fixtureMode }),
+  createPollProcessor({ db, redis, log, userAgent, fixtureMode, enqueueNotify }),
   { connection: redis, concurrency: 1 },
 );
 const notifyWorker = new Worker<NotifyJobData>(
@@ -80,15 +89,7 @@ const notifyWorker = new Worker<NotifyJobData>(
 );
 const sweepWorker = new Worker(
   "notify-sweep",
-  createSweepProcessor({
-    db,
-    log,
-    // Queue defaults apply, so recovered jobs get the same attempts and backoff.
-    // The deterministic jobId drops a row whose job is still pending.
-    enqueue: async (jobs) => {
-      await notifyQueue.addBulk(jobs.map(notifyJob));
-    },
-  }),
+  createSweepProcessor({ db, log, enqueue: enqueueNotify }),
   { connection: redis, concurrency: 1 },
 );
 
