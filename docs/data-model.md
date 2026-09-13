@@ -37,7 +37,7 @@ Notification — (property, savedSearch) that was sent; unique, ever
 | `rooms` | int | *kamers* — total rooms, NL convention |
 | `bedrooms` | int | *slaapkamers* |
 | `property_type` | enum | `apartment`, `house`, `studio`, `room` |
-| `furnished` | enum | `bare` (kaal), `upholstered` (gestoffeerd), `furnished` (gemeubileerd) |
+| `furnished` | enum | `bare` (kaal), `upholstered` (gestoffeerd), `furnished` (gemeubileerd). **Never stored as `not_stated`** — null is the only representation of unknown on a listing. The pg enum carries `not_stated` solely as a saved-search filter option |
 | `available_from` | date | |
 | `min_contract_months` | int | |
 | `registration_allowed` | bool | *inschrijving mogelijk*. Usually only in free text. Adapters may set `true`/`false` only when explicit; otherwise null. **Null is not false** — the matcher decides how to treat unknown |
@@ -74,7 +74,7 @@ Notification — (property, savedSearch) that was sent; unique, ever
 | `price_total_max_cents`, `price_total_min_cents` | matched on total, not base |
 | `area_sqm_min` | |
 | `rooms_min` | |
-| `furnished` | enum[] — any of |
+| `furnished` | enum[] — any of; `not_stated` opts in to listings that don't say how they're furnished |
 | `property_types` | enum[] |
 | `registration` | `required` / `preferred` / `any`. `required` drops `null`; `preferred` keeps `null` but sorts `true` first |
 | `telegram_chat_id` | one channel, MVP |
@@ -86,9 +86,13 @@ Notification — (property, savedSearch) that was sent; unique, ever
 matches(id, search_id, property_id, matched_at, status)  -- status: new | seen | rejected
   unique (search_id, property_id)
 
-notifications(id, search_id, property_id, channel, created_at, sent_at, error)
+notifications(id, search_id, property_id, channel, created_at, claimed_at, sent_at, error, attempts, dead_at)
   unique (search_id, property_id, channel)   -- the idempotency rule, in the schema
 ```
+
+`claimed_at` is a send lease. A worker sends only while it holds a lease it took itself: set on insert, or taken from an unsent, live row whose `claimed_at` is null (released after a failed send) or older than 2 minutes. Unsent live rows untouched for 10 minutes are re-enqueued by the sweeper, so a crashed worker or an exhausted retry chain is recovered rather than lost.
+
+Each failed send increments `attempts`. The 10th failure sets `dead_at` instead of releasing the lease: the row is terminal — never leased, swept or re-inserted — and the alert for that pair is not sent. A notify job is enqueued with jobId `notify-<search_id>-<property_id>`, so the queue holds at most one pending job per pair.
 
 ## `source_runs`
 

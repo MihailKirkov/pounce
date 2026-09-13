@@ -15,6 +15,27 @@
       "when": 1789256562992,
       "tag": "0001_property_listings_listing_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789317344949,
+      "tag": "0002_furnished_not_stated",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789317926129,
+      "tag": "0003_notifications_claimed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789318815815,
+      "tag": "0004_notifications_attempts_dead_at",
+      "breakpoints": true
     }
   ]
 }

@@ -30,8 +30,11 @@ const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode
 
 export const propertyType = pgEnum("property_type", ["apartment", "house", "studio", "room"]);
 
-/** kaal / gestoffeerd / gemeubileerd */
-export const furnished = pgEnum("furnished", ["bare", "upholstered", "furnished"]);
+/**
+ * kaal / gestoffeerd / gemeubileerd. `not_stated` is for saved_searches.furnished
+ * only; an unstated listing is a null listings.furnished, never this value.
+ */
+export const furnished = pgEnum("furnished", ["bare", "upholstered", "furnished", "not_stated"]);
 
 /** required drops null; preferred keeps null but sorts true first; any ignores it. */
 export const registrationMode = pgEnum("registration_mode", ["required", "preferred", "any"]);
@@ -202,8 +205,14 @@ export const notifications = pgTable(
       .references(() => properties.id),
     channel: text("channel").notNull(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
+    /** Send lease: set by the worker sending, null once a failed send releases it. */
+    claimedAt: timestamptz("claimed_at"),
     sentAt: timestamptz("sent_at"),
     error: text("error"),
+    /** Failed sends so far, across every job and sweep. */
+    attempts: integer("attempts").notNull().default(0),
+    /** Terminal: set when attempts reaches the cap. Never retried, never re-inserted. */
+    deadAt: timestamptz("dead_at"),
   },
   (t) => [
     unique("notifications_search_property_channel_unique").on(t.searchId, t.propertyId, t.channel),

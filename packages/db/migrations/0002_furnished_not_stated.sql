@@ -1,0 +1,1 @@
+ALTER TYPE "public"."furnished" ADD VALUE 'not_stated';

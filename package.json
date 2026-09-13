@@ -8,7 +8,7 @@
     "build": "pnpm -r --filter './packages/**' --filter './apps/**' run build",
     "typecheck": "pnpm -r run typecheck",
     "preinstall": "npx only-allow pnpm",
-    "test": "pnpm --filter @pounce/core run build && pnpm -r run test",
+    "test": "pnpm --filter @pounce/core --filter @pounce/db run build && pnpm -r run test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "dev": "docker compose up -d postgres redis && pnpm -r --parallel run dev",

@@ -12,3 +12,4 @@ export {
 } from "./normalize/index.js";
 export * from "./dedup/fingerprint.js";
 export * from "./match/matcher.js";
+export * from "./notify/format.js";
