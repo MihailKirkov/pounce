@@ -48,6 +48,7 @@ Implement apps/worker:
 - Structured logging: one line per poll with seen/new/durationMs.
 Do NOT implement normalize, dedup, match or notify in this task. Insert canonical fields as-is.
 Run it: pnpm --filter @pounce/worker dev. Paste two consecutive poll log lines showing 3 new then 0 new.
+Also: build the HttpClient with minGapMs taken from adapter.polling.minRequestGapMs, not a hardcoded value. On a 429 or 5xx from list(), apply the adapter's polling.backoff (initialSeconds, factor, maxSeconds) to the next poll of that source and record the reason in source_runs.error. Honour a Retry-After header when present.
 ```
 
 Note: the fake adapter's `ctx.http` will be the real client hitting `fake.example`, which doesn't exist. For sprint 1, add a `FIXTURE_MODE=1` env check in `poll.ts` that uses `testing.createTestContext()` pointing at the adapter package's fixtures instead. Remove in sprint 2.

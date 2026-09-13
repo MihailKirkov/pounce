@@ -6,10 +6,23 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
     "start": "node dist/main.js",
-    "test": "echo 'no tests yet'"
+    "test": "vitest run"
   },
-  "dependencies": { "@pounce/core": "workspace:*", "@pounce/db": "workspace:*" },
-  "devDependencies": { "typescript": "^5.6.3", "tsx": "^4.19.1", "@types/node": "^22.7.5" }
+  "dependencies": {
+    "@pounce/adapter-fake": "workspace:*",
+    "@pounce/core": "workspace:*",
+    "@pounce/db": "workspace:*",
+    "bullmq": "^6.3.4",
+    "drizzle-orm": "^0.36.0",
+    "ioredis": "^6.0.0",
+    "pino": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.3"
+  }
 }
