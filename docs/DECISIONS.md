@@ -105,6 +105,10 @@ Format: context → decision → why → what we gave up. Keep each under ~150 w
 
 ---
 
+## 009 — Claude Code implements the engine; owner reviews. Brief §7 said the normalizer, deduplicator, matcher and notifier would be hand-written. Reversed: getting to a working UI with real listings is worth more than the learning, and the pieces are test-covered and small enough to review properly. Gave up: deep familiarity at 23:00 when it breaks. Mitigation: no engine commit without a line-by-line read.
+
+---
+
 ## 003a — Amendment to 003: idempotency key includes channel (2026-09-13)
 
 **Context.** 003 specified `notifications(search_id, property_id)` with a status column. When the schema was written (sprint 1, T1), `channel` was added to the key and retry state became `sent_at` / `error`.

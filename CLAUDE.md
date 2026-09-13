@@ -22,7 +22,7 @@ Read `README.md`, `DECISIONS.md`, `ADAPTERS.md` and `docs/data-model.md` before 
 ## Working style
 - Small commits, one task each. Run `pnpm typecheck && pnpm lint && pnpm test` before declaring a task done; paste the output.
 - Write the test first when the task is in `packages/core`.
-- The owner hand-writes normalize, dedup, matcher and the notify idempotency path. For those areas: scaffold files, signatures and tests only, unless explicitly asked to implement.
+- The owner reviews normalize, dedup, matcher and the notify idempotency path line by line before commit. Implement them fully, but write tests first and keep each function small and pure.
 - Do not add features not in the current sprint file under `docs/`. If something seems missing, add a line to `docs/backlog.md` instead of building it.
 - Do not install a dependency without saying why in the commit message. Prefer the standard library.
 

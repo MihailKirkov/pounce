@@ -24,8 +24,8 @@ Notification — (property, savedSearch) that was sent; unique, ever
 | `published_at` | timestamptz | source's claim; Pararius exposes "aangeboden sinds", Huurwoningen exposes a date badge. Fall back to `first_seen_at` for age display, and flag which one is being shown |
 | `title` | text | |
 | `address_raw` | text | exactly as the source shows it |
-| `street` | text | parsed; house number kept in street |
-| `house_number` | text | separate for dedup fingerprint; includes suffix (`12a`, `12-2`) |
+| `street` | text | parsed street name only; the house number is **not** kept here, it lives in `house_number` |
+| `house_number` | text | used by the dedup address fingerprint; includes suffix, uppercased (`12A`, `12-2`, `12 BIS`) |
 | `postcode` | text | normalized `1234AB` (no space, upper) |
 | `city` | text | |
 | `lat`, `lng` | double | only if the source provides it; never geocode in MVP |

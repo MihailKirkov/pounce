@@ -33,9 +33,12 @@ describe("fake adapter", () => {
     const { raws } = await testing.assertAdapterContract(fakeAdapter, ctx, {
       cities: ["Eindhoven"],
     });
-    const first = raws[0]!;
+    const first = raws[0];
+    if (!first || !fakeAdapter.detail) {
+      throw new Error("expected a fixture listing and a detail() implementation");
+    }
     expect(fakeAdapter.toCanonical(first).registrationAllowed).toBeUndefined();
-    const enriched = await fakeAdapter.detail!(first, ctx);
+    const enriched = await fakeAdapter.detail(first, ctx);
     const c = fakeAdapter.toCanonical(enriched);
     expect(c.registrationAllowed).toBe(true);
     expect(c.depositCents).toBe(210000);

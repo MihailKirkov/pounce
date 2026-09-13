@@ -72,8 +72,7 @@ export function nextBackoff(
 ): NextBackoff {
   const failures = (previous?.failures ?? 0) + 1;
   const delayMs = backoffDelayMs(policy, failures);
-  const clamped =
-    throttle.retryAfterMs !== undefined && throttle.retryAfterMs > MAX_RETRY_AFTER_MS;
+  const clamped = throttle.retryAfterMs !== undefined && throttle.retryAfterMs > MAX_RETRY_AFTER_MS;
   const retryAfterMs = clamped ? MAX_RETRY_AFTER_MS : throttle.retryAfterMs;
   const until = Math.max(
     scheduledAt + delayMs - TICK_SLACK_MS,
